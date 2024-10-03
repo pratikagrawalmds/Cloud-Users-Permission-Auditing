@@ -1,0 +1,49 @@
+trigger:
+  - none
+pr:
+  - none
+
+variables:
+
+ - name: storageAccountSubscriptionId
+   value: e25f921a-492f-468e-ab0c-3052e5f208d5
+
+ - name: targetStorageAccountName
+   value: wkservicenowdiscovery
+
+ - name: targetContainerName
+   value: azure
+
+ - name: targetStorageAccountResourceGroup
+   value: wk-servicenow-discovery
+
+ - name: azroleassignmentInventory
+   value: azure_role_assignments_inventory.csv
+
+stages:
+ 
+- stage: Azure
+  displayName: User Role Assignment Inventory
+  pool:
+    vmImage: 'windows-latest'
+  jobs:
+  - job: Inventory
+    displayName: User Role Assignment Inventory
+    steps:
+      - checkout: self
+
+      - task: AzurePowerShell@5
+        displayName: Create Report
+        inputs:
+          azureSubscription: 'WK-Service-Subscription'
+          ScriptType: 'FilePath'
+          ScriptPath: 'Azure/Azure-User-RoleAssignments/RoleAssignments-inventory.ps1'
+          ScriptArguments: '-StorageAccountSubscriptionId "$(storageAccountSubscriptionId)" -TargetStorageAccountName "$(targetStorageAccountName)" -TargetStorageAccountResourceGroup "$(targetStorageAccountResourceGroup)" -TargetContainerName "$(targetContainerName)" -azroleassignmentInventory "$(azroleassignmentInventory)"'            
+          azurePowerShellVersion: 'OtherVersion'
+          preferredAzurePowerShellVersion: '11.4.0'
+          pwsh: true
+
+      - task: PublishBuildArtifacts@1
+        inputs:
+          pathToPublish: $(Build.ArtifactStagingDirectory)
+          artifactName: Report-Azure
